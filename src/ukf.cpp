@@ -221,7 +221,8 @@ void UKF::GenerateAugementedSigmaPoints(){
 
 void UKF::SigmaPointPrediction(const double delta_t){
 
-  // Predict state sigma point matrix by passing Xsig_aug_ throught non-linear eqs of motion model(CTRV)
+  // Calculate Predict state sigma point matrix by passing Xsig_aug_ through non-linear eqs of motion model(CTRV)
+  // Xsig_pred represents non-linear state transition from K to K+1
 
   double dt = delta_t;
   double dt2 = delta_t * delta_t;
