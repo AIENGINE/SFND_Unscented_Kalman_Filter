@@ -1,9 +1,11 @@
 #ifndef UKF_H
 #define UKF_H
 
+#include <iostream>
 #include "Eigen/Dense"
 #include "measurement_package.h"
 
+static const float epsilon = 1.0e-05f;
 class UKF {
  public:
   /**
@@ -108,7 +110,8 @@ class UKF {
 
   //difference vector used in Prediction of Lidar and Radar measurement functions and UpdateLidar and UpdateRadar 
   Eigen::VectorXd measurement_diff_vector_;
-  Eigen::VectorXd state_diff_vector_;  
+  Eigen::VectorXd state_diff_vector_;
+  int64_t previous_timestamp_;  
 
   private:
 
