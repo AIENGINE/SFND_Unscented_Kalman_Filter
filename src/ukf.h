@@ -106,7 +106,18 @@ class UKF {
 
   //System/innovation Covariance matrix
   Eigen::MatrixXd S_;
+  // Measurement Covariance matrix
+  Eigen::MatrixXd R_;
+
   Eigen::VectorXd z_pred_;
+
+  // Cross Correlation matrix between predicted sigma points matrix of state and predicted sigma points matrix of measurements
+  Eigen::MatrixXd T_; 
+
+  Eigen::MatrixXd K_;
+
+  //actual measurement from measurement package
+  Eigen::VectorXd z_;
 
   //difference vector used in Prediction of Lidar and Radar measurement functions and UpdateLidar and UpdateRadar 
   Eigen::VectorXd measurement_diff_vector_;
@@ -127,7 +138,7 @@ class UKF {
   Eigen::VectorXd x_aug_;
   Eigen::MatrixXd P_aug_;
   Eigen::MatrixXd A_; //for sqrt using L * L.T
-  double px_, py_, v_, yaw_, yawd_, nu_a_, nu_yawdd_;
+  // double px_, py_, v_, yaw_, yawd_, nu_a_, nu_yawdd_;
 
   
 };

@@ -130,8 +130,8 @@ public:
 				VectorXd gt(4);
 				gt << traffic[i].position.x, traffic[i].position.y, traffic[i].velocity*cos(traffic[i].angle), traffic[i].velocity*sin(traffic[i].angle);
 				tools.ground_truth.push_back(gt);
-				tools.lidarSense(traffic[i], viewer, timestamp, visualize_lidar);
 				tools.radarSense(traffic[i], egoCar, viewer, timestamp, visualize_radar);
+				tools.lidarSense(traffic[i], viewer, timestamp, visualize_lidar);
 				tools.ukfResults(traffic[i],viewer, projectedTime, projectedSteps);
 				VectorXd estimate(4);
 				double v  = traffic[i].ukf.x_(2);
