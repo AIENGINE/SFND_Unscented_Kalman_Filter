@@ -15,10 +15,12 @@ UKF::UKF() {
   use_radar_ = true;
 
   // initial state vector
-  x_ = VectorXd(5);
+  x_ = VectorXd(n_x_);
+  x_.fill(0.0);
 
-  // initial covariance matrix
-  P_ = MatrixXd(5, 5);
+  // initial state covariance matrix
+  P_ = MatrixXd(n_x_, n_x_);
+  P_.fill(0.0);
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
   std_a_ = 30;
@@ -54,6 +56,21 @@ UKF::UKF() {
    * TODO: Complete the initialization. See ukf.h for other member properties.
    * Hint: one or more values initialized above might be wildly off...
    */
+  x_aug_ = VectorXd(n_aug_);
+  Xsig_aug_ = MatrixXd(n_aug_, 2*n_aug_+1);
+  P_aug_ = MatrixXd(n_aug_, n_aug_); //Cholesky (L * L.T) decomposition is performed then sigma points are calculated sigma points (XSig_aug_) using given formulas see ukf.h ref. section
+
+  weights_ = VectorXd(2*n_aug_+1);
+  weights_.fill(0.0);
+  weights_(0) = lambda_ / (lambda_ + n_aug_);
+  float weights_value = 0.5 / (n_aug_ + lambda_);
+  for (size_t vec_idx = 1; vec_idx < 2*n_aug_+1; ++vec_idx)
+  {
+    weights_(vec_idx) = 0.5 / (n_aug_ + lambda_);
+  }
+
+  
+
 }
 
 UKF::~UKF() {}
@@ -78,7 +95,7 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
    * TODO: Complete this function! Use lidar data to update the belief 
    * about the object's position. Modify the state vector, x_, and 
    * covariance, P_.
-   * You can also calculate the lidar NIS, if desired.
+   * You can also calculate the lidar NIS(Normalized Innovation Squared), if desired.
    */
 }
 

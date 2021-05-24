@@ -57,8 +57,11 @@ class UKF {
   // state covariance matrix
   Eigen::MatrixXd P_;
 
-  // predicted sigma points matrix
+  // predicted state vector sigma points matrix
   Eigen::MatrixXd Xsig_pred_;
+
+  // predicted measurement sigma point matrix
+  Eigen::MatrixXd Zsig_;
 
   // time when the state is true, in us
   long long time_us_;
@@ -88,13 +91,46 @@ class UKF {
   Eigen::VectorXd weights_;
 
   // State dimension
-  int n_x_;
+  int n_x_{5};
 
   // Augmented state dimension
-  int n_aug_;
+  int n_aug_{7};
+
+  // Measurement state vector dimension
+  int n_z_{3};
 
   // Sigma point spreading parameter
   double lambda_;
+
+  //System/innovation Covariance matrix
+  Eigen::MatrixXd S_;
+  Eigen::VectorXd z_pred_;
+
+  //difference vector used in Prediction of Lidar and Radar measurement functions and UpdateLidar and UpdateRadar 
+  Eigen::VectorXd measurement_diff_vector_;
+  Eigen::VectorXd state_diff_vector_;  
+
+  private:
+
+  void GenerateAndAugementSigmaPoints();
+  void SigmaPointPrediction(); //pass sigma points through non-linear function
+  void PredictMeanAndCovariance();
+  void PredictRadarMeasurement();
+  void PredictLidarMeasurement();
+  bool static floatCompare(float f1, float f2);
+  void static CalculateNIS(); // for formula see Ref. Section below
+
+  Eigen::MatrixXd Xsig_aug_;
+  Eigen::VectorXd x_aug_;
+  Eigen::MatrixXd P_aug_;
+
+  
 };
 
 #endif  // UKF_H
+// Ref. Section
+// Formulas used to calculate sigma points and then re-estimating Gausssian from those sigma points can be found under
+// http://ais.informatik.uni-freiburg.de/teaching/current-ws/mapping/pdf/slam05-ukf-4.pdf
+
+// Normalized Innovation Squared (NIS) formula used can be found under
+// https://web.stanford.edu/group/arl/sites/default/files/public/publications/Robust_TRN_Framework.pdf
