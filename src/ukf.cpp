@@ -61,6 +61,8 @@ UKF::UKF() {
   x_aug_ = VectorXd(n_aug_);
   Xsig_aug_ = MatrixXd(n_aug_, 2*n_aug_+1);
   P_aug_ = MatrixXd(n_aug_, n_aug_); //Cholesky (L * L.T) decomposition is performed then sigma points are calculated sigma points (XSig_aug_) using given formulas see ukf.h ref. section
+  // A_ = MatrixXd(n_aug_, n_aug_);
+  Xsig_pred_ = MatrixXd(n_x_, 2*n_aug_+1);
 
   weights_ = VectorXd(2*n_aug_+1);
   weights_.fill(0.0);
@@ -71,7 +73,7 @@ UKF::UKF() {
     weights_(vec_idx) = 0.5 / (n_aug_ + lambda_);
   }
 
-
+  px_ = py_ = v_ = yaw_ = yawd_= nu_a_ = nu_yawdd_ = 0.0;
 
 }
 
@@ -128,11 +130,11 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
 
     previous_timestamp_ = meas_package.timestamp_;
     is_initialized_ = true;
+    std::cout<< "..............UKF Initialized.............."<< std::endl;
+    std::cout<<"x = " <<std::endl<< x_<<std::endl;
+    std::cout<<"P = " <<std::endl<< P_<<std::endl;
   }
   
-  std::cout<< "..............UKF Initialized.............."<< std::endl;
-  std::cout<<"x = " <<std::endl<< x_<<std::endl;
-  std::cout<<"P = " <<std::endl<< P_<<std::endl;
 
   float dt = (meas_package.timestamp_ - previous_timestamp_) / 1000000.0;
   previous_timestamp_ = meas_package.timestamp_;
@@ -168,6 +170,9 @@ void UKF::Prediction(double delta_t) {
    * and then predict state covariance matrix and state vector x_ and P_. This step remain same for lidar and radar as 
    * mean state vector is the same for both of the sensors. 
    */
+  GenerateAugementedSigmaPoints();
+  SigmaPointPrediction(delta_t);
+
 }
 
 void UKF::UpdateLidar(MeasurementPackage meas_package) {
@@ -187,3 +192,78 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
    * You can also calculate the radar NIS, if desired.
    */
 }
+
+
+
+void UKF::GenerateAugementedSigmaPoints(){
+
+  x_aug_.head(5) = x_;
+  x_aug_(5) = 0; 
+  x_aug_(6) = 0; 
+
+  P_aug_.topLeftCorner(5, 5) = P_;
+  P_aug_(5, 5) = std_a_ * std_a_;
+  P_aug_(6,6) = std_yawdd_ * std_yawdd_;
+
+  A_ = P_aug_.llt().matrixL();
+
+  // set first column of sigma point matrix
+  Xsig_aug_.col(0) = x_aug_;
+
+  // set remaining sigma points
+  for (int i = 0; i < n_aug_; ++i) {
+      Xsig_aug_.col(i+1)     = x_aug_ + sqrt(lambda_ + n_aug_) * A_.col(i); //n_aug_ based idx on the + weighting factor will go from idx 1 to 7
+      Xsig_aug_.col(i+1+n_aug_) = x_aug_ - sqrt(lambda_ + n_aug_) * A_.col(i); //n_aug_ based idx on the - weighting factor will go from idx 8 to 14
+  }
+
+
+}
+
+void UKF::SigmaPointPrediction(const double delta_t){
+
+  // Predict state sigma point matrix by passing Xsig_aug_ throught non-linear eqs of motion model(CTRV)
+
+  double dt = delta_t;
+  double dt2 = delta_t * delta_t;
+
+  for (size_t col_idx=0; col_idx < 2*n_aug_+1; ++col_idx )
+  {
+
+    px_ = Xsig_aug_(0, col_idx);
+    py_ = Xsig_aug_(1, col_idx);
+    v_ = Xsig_aug_(2, col_idx);
+    yaw_ = Xsig_aug_(3, col_idx);
+    yawd_ = Xsig_aug_(4, col_idx);
+    nu_a_ = Xsig_aug_(5, col_idx);
+    nu_yawdd_ = Xsig_aug_(6, col_idx);
+
+    if (floatCompare(yawd_, 0))
+    {
+      px_ = px_ + v_ * dt * cos(yaw_);
+      py_ = py_ + v_ * dt * sin(yaw_);
+    }
+    else
+    {
+      px_ = px_ + (v_/yawd_) * (sin(yaw_ + yawd_*dt) - sin(yaw_));
+      py_ = py_ + (v_/yawd_) * (-cos(yaw_ + yawd_*dt) + cos(yaw_));
+    }
+    
+    px_ = px_ + (0.5 * dt2 * nu_a_ * cos(yaw_));
+    py_ = py_ + (0.5 * dt2 * nu_a_ * sin(yaw_));
+
+    v_ = v_ + (dt * nu_a_);
+    yaw_ = yaw_ + (yawd_ * dt) + (0.5 * dt2 * nu_yawdd_);
+    yawd_ = yawd_ + (dt * nu_yawdd_); 
+
+
+    Xsig_pred_(0,col_idx) = px_;
+    Xsig_pred_(1,col_idx) = py_;
+    Xsig_pred_(2,col_idx) = v_;
+    Xsig_pred_(3,col_idx) = yaw_;
+    Xsig_pred_(4,col_idx) = yawd_;
+    std::cout<<"Xsig_pred = " <<std::endl<< Xsig_pred_<<std::endl;
+
+  }
+
+}
+

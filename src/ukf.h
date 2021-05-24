@@ -115,8 +115,8 @@ class UKF {
 
   private:
 
-  void GenerateAndAugementSigmaPoints();
-  void SigmaPointPrediction(); //pass sigma points through non-linear function
+  void GenerateAugementedSigmaPoints();
+  void SigmaPointPrediction(const double); //pass sigma points through non-linear function
   void PredictMeanAndCovariance();
   void PredictRadarMeasurement();
   void PredictLidarMeasurement();
@@ -126,6 +126,8 @@ class UKF {
   Eigen::MatrixXd Xsig_aug_;
   Eigen::VectorXd x_aug_;
   Eigen::MatrixXd P_aug_;
+  Eigen::MatrixXd A_; //for sqrt using L * L.T
+  double px_, py_, v_, yaw_, yawd_, nu_a_, nu_yawdd_;
 
   
 };
