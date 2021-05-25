@@ -320,6 +320,10 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
   S_ = MatrixXd(n_z_, n_z_);
   S_.fill(0.0);
 
+  MatrixXd T_ = MatrixXd(n_x_, n_z_);
+  T_.fill(0.0);
+  VectorXd z_ = VectorXd(n_z_);
+  z_.fill(0.0);
   // VectorXd state_diff_vector_ = VectorXd(n_x_); //for predicted mean and later used to calculate cross correlation matrix
   // state_diff_vector_.fill(0.0);
 
@@ -357,37 +361,41 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
     if (measurement_diff_vector_(1) < -M_PI)
         measurement_diff_vector_(1) += 2 * M_PI;
     S_ = S_ + (weights_(idx) * measurement_diff_vector_ * measurement_diff_vector_.transpose());
+
+    state_diff_vector_ = Xsig_pred_.col(idx) - x_;
+    if (state_diff_vector_(3) > M_PI)
+        state_diff_vector_(3) -= 2 * M_PI;
+    if (state_diff_vector_(3) < -M_PI)
+        state_diff_vector_(3) += 2 * M_PI;
+
+    T_ += (weights_(idx) * state_diff_vector_ * measurement_diff_vector_.transpose());
   }
 
   S_ = S_ + R_;
 
 
-  MatrixXd T_ = MatrixXd(n_x_, n_z_);
-  T_.fill(0.0);
-  VectorXd z_ = VectorXd(n_z_);
-  z_.fill(0.0);
 
   z_ << meas_package.raw_measurements_(0), //rho
         meas_package.raw_measurements_(1), //phi
         meas_package.raw_measurements_(2); //rho_dot
   // z_ = meas_package.raw_measurements_;
 
-  for (size_t col_idx=0; col_idx < 2*n_aug_+1; ++col_idx)
-  {
-    measurement_diff_vector_ = Zsig_.col(col_idx) - z_pred_;
-    if (measurement_diff_vector_(1) > M_PI)
-        measurement_diff_vector_(1) -= 2 * M_PI;
-    if (measurement_diff_vector_(1) < -M_PI)
-        measurement_diff_vector_(1) += 2 * M_PI;
+  // for (size_t col_idx=0; col_idx < 2*n_aug_+1; ++col_idx)
+  // {
+  //   measurement_diff_vector_ = Zsig_.col(col_idx) - z_pred_;
+  //   if (measurement_diff_vector_(1) > M_PI)
+  //       measurement_diff_vector_(1) -= 2 * M_PI;
+  //   if (measurement_diff_vector_(1) < -M_PI)
+  //       measurement_diff_vector_(1) += 2 * M_PI;
 
-    state_diff_vector_ = Xsig_pred_.col(col_idx) - x_;
-    if (state_diff_vector_(3) > M_PI)
-        state_diff_vector_(3) -= 2 * M_PI;
-    if (state_diff_vector_(3) < -M_PI)
-        state_diff_vector_(3) += 2 * M_PI;
+  //   state_diff_vector_ = Xsig_pred_.col(col_idx) - x_;
+  //   if (state_diff_vector_(3) > M_PI)
+  //       state_diff_vector_(3) -= 2 * M_PI;
+  //   if (state_diff_vector_(3) < -M_PI)
+  //       state_diff_vector_(3) += 2 * M_PI;
 
-    T_ += (weights_(col_idx) * state_diff_vector_ * measurement_diff_vector_.transpose());
-  }
+  //   T_ += (weights_(col_idx) * state_diff_vector_ * measurement_diff_vector_.transpose());
+  // }
   MatrixXd K_;
   K_ = T_ * S_.inverse();
 
@@ -433,7 +441,7 @@ void UKF::GenerateAugementedSigmaPoints(){
 
 void UKF::SigmaPointPrediction(const double delta_t){
 
-  // Calculate Predict state sigma point matrix by passing Xsig_aug_ through non-linear eqs of motion model(CTRV)
+  // Calculate Predicted state sigma point matrix by passing Xsig_aug_ through non-linear eqs of motion model(CTRV)
   // Xsig_pred represents non-linear state transition from K to K+1
 
   double dt = delta_t;
