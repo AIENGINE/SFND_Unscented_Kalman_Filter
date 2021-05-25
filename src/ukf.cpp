@@ -52,10 +52,6 @@ UKF::UKF() {
    * End DO NOT MODIFY section for measurement noise values 
    */
   
-  /**
-   * TODO: Complete the initialization. See ukf.h for other member properties.
-   * Hint: one or more values initialized above might be wildly off...
-   */
   is_initialized_ = false;
   x_aug_ = VectorXd(n_aug_);
   Xsig_aug_ = MatrixXd(n_aug_, 2*n_aug_+1);
@@ -63,36 +59,16 @@ UKF::UKF() {
   P_aug_.fill(0.0);
 
   Xsig_pred_ = MatrixXd(n_x_, 2*n_aug_+1);
-  state_diff_vector_ = VectorXd(n_x_); //for predicted mean and later used to calculate cross correlation matrix
-  state_diff_vector_.fill(0.0);
-  measurement_diff_vector_ = VectorXd(3);
-  measurement_diff_vector_.fill(0.0);      
-
-  // R_ = MatrixXd(n_z_, n_z_);
-
-  // R_ << (std_radr_ * std_radr_), 0, 0,
-  //       0, (std_radphi_ * std_radphi_), 0,
-  //       0, 0, (std_radrd_ * std_radrd_);
-  
-  // S_ = MatrixXd(n_z_, n_z_);
-  // S_.fill(0.0);
-
-//  T_ = MatrixXd(n_x_, n_z_);
-//  T_.fill(0.0);
-//  z_ = VectorXd(n_z_);
-//  z_.fill(0.0);
 
   lambda_ = 3 - n_aug_;
   weights_ = VectorXd(2*n_aug_+1);
   weights_.fill(0.0);
   weights_(0) = lambda_ / (lambda_ + n_aug_);
-//  float weights_value = 0.5 / (n_aug_ + lambda_);
+
   for (size_t vec_idx = 1; vec_idx < 2*n_aug_+1; ++vec_idx)
   {
     weights_(vec_idx) = 0.5 / (n_aug_ + lambda_);
   }
-
-  // px_ = py_ = v_ = yaw_ = yawd_= nu_a_ = nu_yawdd_ = 0.0;
 
 }
 
@@ -203,7 +179,7 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
    * covariance, P_.
    * You can also calculate the lidar NIS(Normalized Innovation Squared), if desired.
    */
-    int n_z = 2;
+    const int n_z = 2;
     MatrixXd Zsig = MatrixXd::Zero(n_z, 2 * n_aug_ + 1);
 
     // predict measurements------------------------
@@ -320,15 +296,17 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
   S_ = MatrixXd(n_z_, n_z_);
   S_.fill(0.0);
 
+  // Cross Correlation matrix between predicted sigma points matrix of state and predicted sigma points matrix of measurements
   MatrixXd T_ = MatrixXd(n_x_, n_z_);
   T_.fill(0.0);
+  //actual measurement from measurement package
   VectorXd z_ = VectorXd(n_z_);
   z_.fill(0.0);
-  // VectorXd state_diff_vector_ = VectorXd(n_x_); //for predicted mean and later used to calculate cross correlation matrix
-  // state_diff_vector_.fill(0.0);
 
-  // VectorXd measurement_diff_vector_ = VectorXd(n_z_);
-  // measurement_diff_vector_.fill(0.0);  
+  VectorXd state_diff_vector_ = VectorXd::Zero(n_x_); //for calculate cross correlation matrix
+
+  VectorXd measurement_diff_vector_ = VectorXd::Zero(n_z_);
+
 
   for (int col_idx = 0; col_idx < 2 * n_aug_ + 1; ++col_idx)
   {
@@ -497,6 +475,8 @@ void UKF::PredictMeanAndCovariance(){
   // create covariance matrix for prediction
   MatrixXd P = MatrixXd(n_x_, n_x_);
   P.fill(0.0);
+
+  VectorXd state_diff_vector = VectorXd::Zero(n_x_);
   
   for (size_t vec_idx = 0; vec_idx < 2*n_aug_+1; ++vec_idx)
   {
@@ -505,12 +485,12 @@ void UKF::PredictMeanAndCovariance(){
 
   for(size_t col_idx=0; col_idx < 2*n_aug_+1; ++col_idx)
   {
-    state_diff_vector_ = Xsig_pred_.col(col_idx) - x;
-    if (state_diff_vector_(3) > M_PI)
-        state_diff_vector_(3) -= 2 * M_PI;
-    if (state_diff_vector_(3) < -M_PI)
-        state_diff_vector_(3) += 2 * M_PI;
-    P = P + (weights_(col_idx) * state_diff_vector_ * state_diff_vector_.transpose());
+    state_diff_vector = Xsig_pred_.col(col_idx) - x;
+    if (state_diff_vector(3) > M_PI)
+        state_diff_vector(3) -= 2 * M_PI;
+    if (state_diff_vector(3) < -M_PI)
+        state_diff_vector(3) += 2 * M_PI;
+    P = P + (weights_(col_idx) * state_diff_vector * state_diff_vector.transpose());
   }
   x_ = x;
   P_ = P;
