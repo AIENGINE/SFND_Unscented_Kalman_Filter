@@ -106,7 +106,6 @@ class UKF {
   void SigmaPointPrediction(const double); //pass sigma points through non-linear function
   void PredictMeanAndCovariance();
   bool static floatCompare(float f1, float f2);
-  void static CalculateNIS(); // for formula see Ref. Section below
 
   Eigen::MatrixXd Xsig_aug_;
   Eigen::VectorXd x_aug_;

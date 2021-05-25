@@ -81,11 +81,7 @@ bool UKF::floatCompare(float f1, float f2) {
 UKF::~UKF() {}
 
 void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
-  /**
-   * TODO: based on incoming measurement from meas_package which has lidar and radar initizalized the x_ and P_
-   * Calcualte the dt from the last and the current timesstamp -> conver the timestamp into seconds
-   * 
-   */
+
   if (!is_initialized_)
   {
 
@@ -103,7 +99,7 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
             0, 0, 0, 0, 1;
 
     }
-    else // toggle this part in stepHighway function
+    else 
     {
       float rho = meas_package.raw_measurements_[0];
       float phi = meas_package.raw_measurements_[1];
@@ -119,7 +115,7 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
       P_ << (std_laspx_*std_laspx_), 0, 0, 0, 0,
             0, (std_laspy_*std_laspy_), 0, 0, 0,
             0, 0, (std_radrd_*std_radrd_), 0, 0,
-            0, 0, 0, (std_radphi_*std_radphi_), 0,
+            0, 0, 0, 1, 0,
             0, 0, 0, 0, 1;
     }
 
@@ -180,6 +176,7 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
           0, std_laspy_*std_laspy_;
 
   VectorXd z_lidar = meas_package.raw_measurements_; //actual measurement from measurement package
+  
   MatrixXd T_lidar = MatrixXd::Zero(n_x_, n_z_lidar); // cross correlation matrix
 
   VectorXd state_diff_vector_lidar = VectorXd::Zero(n_x_); //for calculate cross correlation matrix
@@ -208,9 +205,6 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
   {
 
     measurement_diff_vector_lidar = Zsig_lidar.col(i) - z_pred_lidar;
-
-    while (measurement_diff_vector_lidar(1) > M_PI) measurement_diff_vector_lidar(1) -= 2.0*M_PI;
-    while (measurement_diff_vector_lidar(1) < -M_PI) measurement_diff_vector_lidar(1) += 2.0*M_PI;
 
     S_lidar += (weights_(i) * measurement_diff_vector_lidar * measurement_diff_vector_lidar.transpose());
 
@@ -245,7 +239,7 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
   // }
 
 
-    // calculate kalman gain K
+    // calculate kalman gain K for lidar
     MatrixXd K_lidar = T_lidar * S_lidar.inverse();
 
     // residuals
@@ -259,6 +253,10 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
     x_ = x_ + K_lidar * z_diff_lidar;
     P_ = P_ - K_lidar * S_lidar * K_lidar.transpose();
 
+  // To test UKF lidar or radar unbaisedness NIS is used here and NIS formula please see Ref. Section ukf.h
+  // auto NIS = z_diff_lidar.transpose() * S_lidar.inverse() * z_diff_lidar;
+  // std::cout<<"NIS = " <<std::endl<< NIS<<std::endl; 
+    
 
 }
 
@@ -342,8 +340,8 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
 
 
   z_radar << meas_package.raw_measurements_(0), //rho
-        meas_package.raw_measurements_(1), //phi
-        meas_package.raw_measurements_(2); //rho_dot
+        meas_package.raw_measurements_(1),      //phi
+        meas_package.raw_measurements_(2);      //rho_dot
   // z_ = meas_package.raw_measurements_;
 
   // for (size_t col_idx=0; col_idx < 2*n_aug_+1; ++col_idx)
@@ -362,6 +360,8 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
 
   //   T_ += (weights_(col_idx) * state_diff_vector_ * measurement_diff_vector_.transpose());
   // }
+
+  // calculate kalman gain for radar
   MatrixXd K_radar;
   K_radar = T_radar * S_radar.inverse();
 
@@ -376,6 +376,11 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
 
   std::cout<<"x_ = " <<std::endl<< x_<<std::endl;
   std::cout<<"P_ = " <<std::endl<< P_<<std::endl;
+
+  // To test UKF lidar or radar unbaisedness NIS is used here and NIS formula please see Ref. Section ukf.h
+  // output values from NIS can then be used to perform consistency check using Chi-squared
+  auto NIS = z_diff_radar.transpose() * S_radar.inverse() * z_diff_radar;
+  std::cout<<"NIS = " <<std::endl<< NIS<<std::endl; 
 }
 
 
