@@ -7,14 +7,14 @@ set(CMAKE_CXX_FLAGS, "${CXX_FLAGS}")
 
 project(playback)
 
-# find_package(PCL 1.2 REQUIRED)
-find_package(PCL 1.11 REQUIRED)
+#find_package(PCL 1.2 REQUIRED)
+ find_package(PCL 1.11 REQUIRED)
 find_package(Eigen3 REQUIRED)
 
-# include_directories(${PCL_INCLUDE_DIRS})
-# link_directories(${PCL_LIBRARY_DIRS})
-# add_definitions(${PCL_DEFINITIONS})
-# list(REMOVE_ITEM PCL_LIBRARIES "vtkproj4")
+#include_directories(${PCL_INCLUDE_DIRS})
+#link_directories(${PCL_LIBRARY_DIRS})
+#add_definitions(${PCL_DEFINITIONS})
+#list(REMOVE_ITEM PCL_LIBRARIES "vtkproj4")
 
 
 add_executable (ukf_highway src/main.cpp src/ukf.cpp src/tools.cpp src/render/render.cpp)

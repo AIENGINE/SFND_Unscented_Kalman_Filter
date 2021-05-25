@@ -63,7 +63,7 @@ class UKF {
   Eigen::MatrixXd Xsig_pred_;
 
   // predicted measurement sigma point matrix
-  Eigen::MatrixXd Zsig_;
+//  Eigen::MatrixXd Zsig_;
 
   // time when the state is true, in us
   long long time_us_;
@@ -99,38 +99,36 @@ class UKF {
   int n_aug_{7};
 
   // Measurement state vector dimension
-  int n_z_{3};
+  // int n_z_{3};
 
   // Sigma point spreading parameter
   double lambda_;
 
-  //System/innovation Covariance matrix
-  Eigen::MatrixXd S_;
-  // Measurement Covariance matrix
-  Eigen::MatrixXd R_;
+  // //System/innovation Covariance matrix
+  // Eigen::MatrixXd S_;
+  // // Measurement Covariance matrix
+  // Eigen::MatrixXd R_;
 
-  Eigen::VectorXd z_pred_;
+//  Eigen::VectorXd z_pred_;
 
   // Cross Correlation matrix between predicted sigma points matrix of state and predicted sigma points matrix of measurements
-  Eigen::MatrixXd T_; 
-
-  Eigen::MatrixXd K_;
-
-  //actual measurement from measurement package
-  Eigen::VectorXd z_;
+//  Eigen::MatrixXd T_;
+//
+//  Eigen::MatrixXd K_;
+//
+//  //actual measurement from measurement package
+//  Eigen::VectorXd z_;
 
   //difference vector used in Prediction of Lidar and Radar measurement functions and UpdateLidar and UpdateRadar 
   Eigen::VectorXd measurement_diff_vector_;
   Eigen::VectorXd state_diff_vector_;
   int64_t previous_timestamp_;  
 
-  private:
+  public:
 
   void GenerateAugementedSigmaPoints();
   void SigmaPointPrediction(const double); //pass sigma points through non-linear function
   void PredictMeanAndCovariance();
-  void PredictRadarMeasurement();
-  void PredictLidarMeasurement();
   bool static floatCompare(float f1, float f2);
   void static CalculateNIS(); // for formula see Ref. Section below
 
